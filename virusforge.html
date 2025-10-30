@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VirusForge - Evolutionary Pandemic Simulator</title>
+    <style>
+        :root {
+            --neon-green: #00ff88;
+            --neon-red: #ff0066;
+            --neon-blue: #00ccff;
+            --neon-purple: #aa00ff;
+            --dark-bg: #0a0a1a;
+            --panel-bg: rgba(20, 20, 40, 0.9);
+            --text: #e0f0ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html { font-size: 16px; }
+        
+        body {
+            background: var(--dark-bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            padding: 0.5rem;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .tagline {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+        
+        .tab {
+            padding: 0.75rem 1rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+        
+        .tab.active {
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            color: black;
+        }
+        
+        .virus-panel {
+            background: var(--panel-bg);
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        
+        .virus-stats {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 0.5rem;
+        }
+        
+        .stat-bar {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            margin: 0 1rem;
+            overflow: hidden;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        button {
+            padding: 1rem;
+            border: none;
+            border-radius: 0.75rem;
+            background: linear-gradient(90deg, var(--neon-green), var(--neon-blue));
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        .pressure-controls {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .pressure-btn {
+            background: rgba(255, 0, 102, 0.2);
+            color: var(--neon-red);
+            border: 1px solid var(--neon-red);
+        }
+        
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .metric-card {
+            background: rgba(0,0,0,0.3);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        
+        .metric-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .outbreak-curve {
+            height: 120px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .strain-library {
+            display: grid;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .strain-item {
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.3);
+            border-radius: 0.5rem;
+            border-left: 3px solid var(--neon-green);
+        }
+        
+        @media (min-width: 768px) {
+            .controls {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .pressure-controls {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .metrics {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦠 VirusForge</h1>
+            <div class="tagline">Evolve your pandemic - Watch natural selection in action</div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" data-tab="evolve">Evolve</div>
+            <div class="tab" data-tab="library">Strain Library</div>
+            <div class="tab" data-tab="analysis">Analysis</div>
+        </div>
+
+        <div id="evolve" class="tab-content active">
+            <div class="virus-panel">
+                <div class="virus-stats">
+                    <div class="stat">
+                        <span>🦠 Transmission</span>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="transmissionBar" style="width: 30%; background: var(--neon-green);"></div>
+                        </div>
+                        <span id="transmissionValue">0.3</span>
+                    </div>
+                    
+                    <div class="stat">
+                        <span>💀 Severity</span>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="severityBar" style="width: 10%; background: var(--neon-red);"></div>
+                        </div>
+                        <span id="severityValue">0.1</span>
+                    </div>
+                    
+                    <div class="stat">
+                        <span>⏳ Incubation</span>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="incubationBar" style="width: 50%; background: var(--neon-blue);"></div>
+                        </div>
+                        <span id="incubationValue">0.5</span>
+                    </div>
+                    
+                    <div class="stat">
+                        <span>🛡️ Evasion</span>
+                        <div class="stat-bar">
+                            <div class="stat-fill" id="evasionBar" style="width: 20%; background: var(--neon-purple);"></div>
+                        </div>
+                        <span id="evasionValue">0.2</span>
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button id="startBtn">▶️ Start Evolution</button>
+                    <button id="pauseBtn">⏸️ Pause</button>
+                    <button id="mutateBtn">⚡ Force Mutation</button>
+                    <button id="saveBtn">💾 Save Strain</button>
+                </div>
+
+                <div class="pressure-controls">
+                    <button class="pressure-btn" data-pressure="lockdown">🔒 Lockdown</button>
+                    <button class="pressure-btn" data-pressure="vaccine">💉 Vaccinate</button>
+                    <button class="pressure-btn" data-pressure="treatment">💊 Treatment</button>
+                    <button class="pressure-btn" data-pressure="season">🌦️ Season Change</button>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="fitnessValue">0.45</div>
+                        <div class="metric-label">Fitness</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="generationValue">0</div>
+                        <div class="metric-label">Generation</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="populationValue">1.2K</div>
+                        <div class="metric-label">Population</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="r0Value">1.1</div>
+                        <div class="metric-label">R₀</div>
+                    </div>
+                </div>
+
+                <div class="outbreak-curve" id="outbreakCurve">
+                    <!-- Canvas will be drawn here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="library" class="tab-content">
+            <div class="virus-panel">
+                <h3>Saved Strains</h3>
+                <div class="strain-library" id="strainLibrary">
+                    <div class="strain-item">
+                        <strong>Alpha Strain</strong>
+                        <div>Transmission: 0.8 | Severity: 0.3</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="analysis" class="tab-content">
+            <div class="virus-panel">
+                <h3>Evolution Analysis</h3>
+                <div class="metrics">
+                    <div class="metric-card">
+                        <div class="metric-value" id="totalMutations">0</div>
+                        <div class="metric-label">Total Mutations</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="adaptationRate">0%</div>
+                        <div class="metric-label">Adaptation Rate</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="selectionStrength">0.0</div>
+                        <div class="metric-label">Selection Strength</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="diversityIndex">0.0</div>
+                        <div class="metric-label">Diversity</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // VirusForge Core Engine
+        class VirusForge {
+            constructor() {
+                this.viruses = [];
+                this.currentVirus = null;
+                this.generation = 0;
+                this.population = 1200;
+                this.isEvolving = false;
+                this.pressures = new Set();
+                this.outbreakData = [];
+                this.savedStrains = [];
+                
+                this.init();
+            }
+            
+            init() {
+                // Create initial virus
+                this.currentVirus = this.createRandomVirus();
+                this.viruses = [this.currentVirus];
+                this.updateDisplay();
+                this.setupEventListeners();
+            }
+            
+            createRandomVirus() {
+                return {
+                    id: Date.now(),
+                    transmission: 0.3 + Math.random() * 0.2,
+                    severity: 0.1 + Math.random() * 0.2,
+                    incubation: 0.4 + Math.random() * 0.3,
+                    evasion: 0.1 + Math.random() * 0.3,
+                    fitness: 0,
+                    age: 0,
+                    name: `Strain-${Math.floor(Math.random() * 1000)}`
+                };
+            }
+            
+            evolve() {
+                if (!this.isEvolving) return;
+                
+                this.generation++;
+                
+                // Mutate current virus
+                this.currentVirus = this.mutateVirus(this.currentVirus);
+                
+                // Calculate fitness based on environmental pressures
+                this.currentVirus.fitness = this.calculateFitness(this.currentVirus);
+                
+                // Update population based on fitness
+                this.updatePopulation();
+                
+                // Record outbreak data
+                this.recordOutbreakData();
+                
+                this.updateDisplay();
+                
+                // Continue evolution
+                setTimeout(() => this.evolve(), 1000);
+            }
+            
+            mutateVirus(virus) {
+                const mutationRate = 0.1;
+                const newVirus = {...virus};
+                
+                // Mutate each trait with trade-offs
+                if (Math.random() < mutationRate) {
+                    newVirus.transmission = this.mutateTrait(virus.transmission);
+                    // Trade-off: higher transmission often increases severity
+                    if (Math.random() < 0.3) {
+                        newVirus.severity = this.mutateTrait(virus.severity);
+                    }
+                }
+                
+                if (Math.random() < mutationRate) {
+                    newVirus.incubation = this.mutateTrait(virus.incubation);
+                }
+                
+                if (Math.random() < mutationRate) {
+                    newVirus.evasion = this.mutateTrait(virus.evasion);
+                    // Trade-off: better evasion might reduce transmission
+                    if (Math.random() < 0.4) {
+                        newVirus.transmission *= 0.95;
+                    }
+                }
+                
+                newVirus.age++;
+                return newVirus;
+            }
+            
+            mutateTrait(value) {
+                const change = (Math.random() - 0.5) * 0.2;
+                return Math.max(0.05, Math.min(0.95, value + change));
+            }
+            
+            calculateFitness(virus) {
+                let fitness = virus.transmission * 0.4; // Transmission is most important
+                
+                // Severity penalty - too lethal reduces spread
+                fitness += (1 - virus.severity) * 0.2;
+                
+                // Incubation bonus - longer incubation helps avoid detection
+                fitness += virus.incubation * 0.2;
+                
+                // Environmental pressures
+                if (this.pressures.has('lockdown')) {
+                    fitness += virus.incubation * 0.3; // Longer incubation favored
+                    fitness -= virus.transmission * 0.2; // High transmission penalized
+                }
+                
+                if (this.pressures.has('vaccine')) {
+                    fitness += virus.evasion * 0.4; // Immune evasion crucial
+                }
+                
+                if (this.pressures.has('treatment')) {
+                    fitness += virus.evasion * 0.3; // Drug resistance important
+                }
+                
+                if (this.pressures.has('season')) {
+                    // Seasonal fluctuations
+                    fitness *= 0.8 + Math.random() * 0.4;
+                }
+                
+                return Math.max(0, Math.min(1, fitness));
+            }
+            
+            updatePopulation() {
+                const growthRate = this.currentVirus.fitness * 2 - 0.8;
+                this.population = Math.max(100, this.population * (1 + growthRate * 0.1));
+            }
+            
+            recordOutbreakData() {
+                this.outbreakData.push({
+                    generation: this.generation,
+                    population: this.population,
+                    transmission: this.currentVirus.transmission,
+                    severity: this.currentVirus.severity,
+                    r0: this.calculateR0()
+                });
+                
+                // Keep only last 50 data points
+                if (this.outbreakData.length > 50) {
+                    this.outbreakData.shift();
+                }
+            }
+            
+            calculateR0() {
+                // Basic R0 calculation based on virus traits
+                return this.currentVirus.transmission * 3 * 
+                       (1 + this.currentVirus.incubation * 0.5) * 
+                       (1 - this.currentVirus.severity * 0.3);
+            }
+            
+            applyPressure(pressureType) {
+                this.pressures.add(pressureType);
+                // Pressure lasts for 5 generations
+                setTimeout(() => {
+                    this.pressures.delete(pressureType);
+                }, 5000);
+            }
+            
+            saveCurrentStrain() {
+                const savedStrain = {
+                    ...this.currentVirus,
+                    savedAt: new Date().toLocaleTimeString(),
+                    generation: this.generation
+                };
+                this.savedStrains.push(savedStrain);
+                this.updateStrainLibrary();
+            }
+            
+            updateDisplay() {
+                // Update virus stats
+                document.getElementById('transmissionValue').textContent = 
+                    this.currentVirus.transmission.toFixed(2);
+                document.getElementById('transmissionBar').style.width = 
+                    (this.currentVirus.transmission * 100) + '%';
+                
+                document.getElementById('severityValue').textContent = 
+                    this.currentVirus.severity.toFixed(2);
+                document.getElementById('severityBar').style.width = 
+                    (this.currentVirus.severity * 100) + '%';
+                
+                document.getElementById('incubationValue').textContent = 
+                    this.currentVirus.incubation.toFixed(2);
+                document.getElementById('incubationBar').style.width = 
+                    (this.currentVirus.incubation * 100) + '%';
+                
+                document.getElementById('evasionValue').textContent = 
+                    this.currentVirus.evasion.toFixed(2);
+                document.getElementById('evasionBar').style.width = 
+                    (this.currentVirus.evasion * 100) + '%';
+                
+                // Update metrics
+                document.getElementById('fitnessValue').textContent = 
+                    this.currentVirus.fitness.toFixed(2);
+                document.getElementById('generationValue').textContent = this.generation;
+                document.getElementById('populationValue').textContent = 
+                    this.formatPopulation(this.population);
+                document.getElementById('r0Value').textContent = this.calculateR0().toFixed(1);
+                
+                // Draw outbreak curve
+                this.drawOutbreakCurve();
+            }
+            
+            formatPopulation(pop) {
+                if (pop < 1000) return Math.floor(pop);
+                if (pop < 1000000) return (pop / 1000).toFixed(1) + 'K';
+                return (pop / 1000000).toFixed(1) + 'M';
+            }
+            
+            drawOutbreakCurve() {
+                const canvas = document.getElementById('outbreakCurve');
+                const ctx = canvas.getContext('2d');
+                const width = canvas.offsetWidth;
+                const height = canvas.offsetHeight;
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Clear
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(0, 0, width, height);
+                
+                if (this.outbreakData.length < 2) return;
+                
+                // Draw curve
+                ctx.beginPath();
+                ctx.strokeStyle = var(--neon-green);
+                ctx.lineWidth = 2;
+                
+                const maxPop = Math.max(...this.outbreakData.map(d => d.population));
+                
+                this.outbreakData.forEach((point, index) => {
+                    const x = (index / (this.outbreakData.length - 1)) * width;
+                    const y = height - (point.population / maxPop) * height * 0.8;
+                    
+                    if (index === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+                
+                ctx.stroke();
+            }
+            
+            updateStrainLibrary() {
+                const library = document.getElementById('strainLibrary');
+                library.innerHTML = this.savedStrains.map(strain => `
+                    <div class="strain-item">
+                        <strong>${strain.name}</strong>
+                        <div>Transmission: ${strain.transmission.toFixed(2)} | 
+                             Severity: ${strain.severity.toFixed(2)} | 
+                             Gen: ${strain.generation}</div>
+                        <small>Saved: ${strain.savedAt}</small>
+                    </div>
+                `).join('');
+            }
+            
+            setupEventListeners() {
+                document.getElementById('startBtn').addEventListener('click', () => {
+                    this.isEvolving = true;
+                    this.evolve();
+                });
+                
+                document.getElementById('pauseBtn').addEventListener('click', () => {
+                    this.isEvolving = false;
+                });
+                
+                document.getElementById('mutateBtn').addEventListener('click', () => {
+                    this.currentVirus = this.mutateVirus(this.currentVirus);
+                    this.updateDisplay();
+                });
+                
+                document.getElementById('saveBtn').addEventListener('click', () => {
+                    this.saveCurrentStrain();
+                });
+                
+                // Pressure buttons
+                document.querySelectorAll('.pressure-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const pressure = e.target.dataset.pressure;
+                        this.applyPressure(pressure);
+                    });
+                });
+                
+                // Tab switching
+                document.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                        tab.classList.add('active');
+                        document.getElementById(tab.dataset.tab).classList.add('active');
+                    });
+                });
+            }
+        }
+
+        // Initialize the simulator when page loads
+        let virusForge;
+        document.addEventListener('DOMContentLoaded', () => {
+            virusForge = new VirusForge();
+        });
+    </script>
+</body>
+</html>
