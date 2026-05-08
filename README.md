@@ -69,3 +69,9 @@ There are no external libraries or frameworks. Just pure, unadulterated code.
 ---
 
 > **"It is not the strongest of the species that survives, nor the most intelligent that survives. It is the one that is most adaptable to change."**
+<p align="center">
+  <img src="https://img.shields.io/badge/Forge‑Theory‑Labs‑Ecosystem-black" />
+  <img src="https://img.shields.io/badge/Semantic‑System‑typed-blue" />
+  <img src="https://img.shields.io/badge/SCP‑Capsule‑included-purple" />
+</p>
+
